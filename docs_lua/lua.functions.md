@@ -6,8 +6,8 @@
 * **cleanname** (filename): Returns a filename with invalid characters stripped out.
 * **copy** ( source, dest ): Copies a file to a new file.
 * **delete** ( filename ): Deletes a file.
-* **exec** ( filename ): Executes a file.
-* **exechide** ( filename ): Executes a file in hidden state.
+* **exec** ( filename [,params, dir] ): Executes a file.
+* **exechide** ( filename [,params, dir] ): Executes a file in hidden state.
 * **exists** ( filename ): Returns true if a file exists, and false otherwise.
 * **getcontents** ( filename ): Returns the contents of a local file.
 * **getdir** ( filename ): Gets the directory part of a filename.
@@ -42,6 +42,8 @@
 * **replacefirst** ( s, find, rep ): Replaces just the first occurrence of a sub string in a string.
 * **stripquotes** ( s ): Returns a string with removed quotes.
 * **stripblanklines** ( s ): Returns a multi-line string without any blank lines.
+* **swapcase** (s): Returns a string with inverted character case (upper becomes lower and vice-versa).
+* **titlecase** (s): Converts a string to title case.
 * **trim** ( s ): Returns a string without redundant whitespace.
 
 ### String Matching Functions
@@ -90,7 +92,7 @@ These will return a boolean value.
  * port - port number (eg: 80)
  * proto - protocol (eg: https)
 * **decode** ( s ): Decodes an URL.
-* **encode** ( s ): Encodes an URL.
+* **encode** ( s, [,encodeplussign]): Encodes an URL.
 * **encodefull** ( s ): Full URL Encode.
 * **fileurltofilename** ( fileurl ): Converts a file URL to a proper filename.
 * **genfromhost** ( hostname , port ): Generates an URL from a hostname and a port.
@@ -100,6 +102,7 @@ These will return a boolean value.
 
 ### JSON Functions (json.*)
 
+* **escape** ( s ): Escapes JSON special characters.
 * **object**: Returns a JSON object (see `classes.jsonobject.md`).
 
 ### HTTP Functions (http.*)
@@ -124,9 +127,9 @@ These will return a boolean value.
 
 ### Conversion Functions (convert.*)
 
-* **commastrtostr** ( s ): Converts a comma string to a string.
+* **commatostr** ( s ): Converts a comma string to a string.
 * **strtoalphanum** ( s ): Converts a string to alphanumeric string.
-* **strtocommastr** ( s ): Converts a string to a comma string.
+* **strtocomma** ( s ): Converts a string to a comma string.
 * **strtohex** ( s ): Converts a string to a hexadecimal string.
 * **hextoint** ( s ): Converts a hex string to integer.
 * **hextostr** ( s ): Converts a hexadecimal string to string.
@@ -148,3 +151,7 @@ These will return a boolean value.
 * **hasarg** ( s ):  Returns true if the argument has been provided, false otherwise.
 * **clipboard_gettext** ( ): Returns the current Clipboard text (if any).
 * **clipboard_settext** ( s ): Copies a text to the Clipboard. 
+* **settimeout** (ms, code or ms, cfunction, [,arg1,arg2,arg3]): sets a timer which executes a function or specified piece of code once the timer expires. Examples:
+ctk.utils.settimeout(1000, 'print("Hello World!")')
+ctk.utils.settimeout(1000, mytable.myfunc)
+ctk.utils.settimeout(1000, app.showmessage, "Hello World!")

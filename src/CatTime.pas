@@ -15,7 +15,7 @@ uses
 {$IFDEF DXE2_OR_UP}
   System.SysUtils, Vcl.Controls;
 {$ELSE}
-  SysUtils, Controls;
+  SysUtils, Controls, Windows;
 {$ENDIF}
 type
   TCatDecodedDate = record

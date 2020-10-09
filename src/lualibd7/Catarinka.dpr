@@ -1,7 +1,7 @@
 library Catarinka;
 
 {
-  Catarinka Lua Library
+  Catarinka Lua Library for Delphi 7 (32-bit)
   Copyright (c) 2013-2020 Felipe Daragon
   License: 3-clause BSD
   See https://github.com/felipedaragon/catarinka/ for details
@@ -9,14 +9,10 @@ library Catarinka;
 
 uses
   Lua,
-  uMain in 'uMain.pas';
+  CtkCore in '..\CtkCore.pas';
 
- // Reduces exe size
-{$IFDEF RELEASE}
-{$WEAKLINKRTTI ON}
-{$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
-{$ENDIF}
- // Reduces exe size end
+
+{$I CatCompactLib.inc}
 
 {$R *.res}
 

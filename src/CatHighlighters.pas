@@ -25,6 +25,7 @@ uses
   SynExportHTML,
   SynEditHighlighter,
   SynHighlighterCPP,
+  SynHighlighterCS,
   SynHighlighterJava,
   SynHighlighterRuby,
   SynHighlighterPerl,
@@ -46,6 +47,7 @@ type
     fWebXML: TSynWebXMLSyn;
     fWebPHP: TSynWebPHPPlainSyn;
     fCPP: TSynCPPSyn;
+    fCS: TSynCSSyn;
     fJava: TSynJavaSyn;
     fRuby: TSynRubySyn;
     fPascal: TSynPasSyn;
@@ -55,6 +57,7 @@ type
     fVBScript: TSynVBScriptSyn;
     function GetSynExport(HL: TSynCustomHighlighter; Source: string): string;
   public
+    function GetByFilename(const filename: string): TSynCustomHighlighter;
     function GetByFileExtension(const fileext: string): TSynCustomHighlighter;
     function GetByContentType(const contenttype: string): TSynCustomHighlighter;
     function GetByResponseText(const s: string): TSynCustomHighlighter;
@@ -97,14 +100,14 @@ end;
 
 type
   TWebExts = (
-    css, dpr, htm, html, java, js, json, jsie, lua, lp, pas, pasrem, php,
+    cs, css, dpr, htm, html, java, js, json, jsie, lua, lp, pas, pasrem, php,
     pl, py, rb, sql, tis, vbs, xml);
 
 type
   TCPPExts = (c, h, cpp, cc, cxx, hpp, hxx, hh, m, mm);
 
 function TCatHighlighters.GetByFileExtension(const fileext: string)
-  : TSynCustomHighlighter;
+: TSynCustomHighlighter;
 var
   ext: string;
 begin
@@ -125,8 +128,14 @@ begin
       result := nil;
     java:
       result := fJava;
-    js, json, jsie, tis:
+    js, jsie:
       result := fWebJS;
+    json:
+      result := fWebJS;
+    tis:
+      result := fWebJS;
+    cs:
+      result := fCS;
     css:
       result := fWebCSS;
     php:
@@ -146,6 +155,11 @@ begin
     xml:
       result := fWebXML;
   end;
+end;
+
+function TCatHighlighters.GetByFilename(const filename: string): TSynCustomHighlighter;
+begin
+  result := GetByFileExtension(extractfileext(filename));
 end;
 
 function TCatHighlighters.GetSynExport(HL: TSynCustomHighlighter;
@@ -237,6 +251,7 @@ end;
 constructor TCatHighlighters.Create(AOwner: TObject);
 begin
   inherited Create;
+  fCS := TSynCSSyn.Create(nil);
   fCPP := TSynCPPSyn.Create(nil);
   fJava := TSynJavaSyn.Create(nil);
   fRuby := TSynRubySyn.Create(nil);
@@ -278,6 +293,7 @@ begin
   fRuby.Free;
   fJava.Free;
   fCPP.Free;
+  fCS.Free;
   inherited;
 end;
 

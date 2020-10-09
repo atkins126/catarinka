@@ -1,4 +1,4 @@
-unit uHTMLParser;
+unit CtkHTMLParser;
 
 {
   Catarinka Lua Library - HTML Parser Object
@@ -26,7 +26,7 @@ type
     destructor Destroy; override;
   end;
 
-procedure RegisterCatarinkaHTMLParser(L: PLua_State);
+function RegisterCatarinkaHTMLParser(L: PLua_State):TLuaObjectRegResult;
 
 implementation
 
@@ -46,7 +46,7 @@ var
   ht: TCatarinkaHTMLParser;
 begin
   ht := TCatarinkaHTMLParser(LuaToTLuaObject(L, 1));
-  ht.obj.text := '';
+  ht.obj.text := emptystr;
   result := 1;
 end;
 
@@ -74,10 +74,11 @@ var
   s: string;
 begin
   ht := TCatarinkaHTMLParser(LuaToTLuaObject(L, 1));
-  s := ht.obj.tag.params.values[lua_tostring(L, 2)];
-  s := removequotes(s);
-  lua_pushstring(L, s);
-  result := 1;
+  if plua_validatemethodargs(L, result, [LUA_TSTRING]).OK then begin
+   s := ht.obj.tag.params.values[lua_tostring(L, 2)];
+   s := removequotes(s);
+   lua_pushstring(L, s);
+  end;
 end;
 
 function method_setattrib(L: PLua_State): Integer; cdecl;
@@ -85,8 +86,8 @@ var
   ht: TCatarinkaHTMLParser;
 begin
   ht := TCatarinkaHTMLParser(LuaToTLuaObject(L, 1));
-  ht.obj.tag.params.values[lua_tostring(L, 2)] := lua_tostring(L, 3);
-  result := 1;
+  if plua_validatemethodargs(L, result, [LUA_TSTRING, LUA_TSTRING]).OK then
+   ht.obj.tag.params.values[lua_tostring(L, 2)] := lua_tostring(L, 3);
 end;
 
 function method_loadfromstr(L: PLua_State): Integer; cdecl;
@@ -94,6 +95,7 @@ var
   ht: TCatarinkaHTMLParser;
 begin
   ht := TCatarinkaHTMLParser(LuaToTLuaObject(L, 1));
+  if plua_validatemethodargs(L, result, [LUA_TSTRING]).OK then
   ht.obj.text := lua_tostring(L, 2);
   result := 1;
 end;
@@ -125,9 +127,9 @@ begin
   result := new_LuaObject(L, objname, p);
 end;
 
-procedure RegisterCatarinkaHTMLParser(L: PLua_State);
+function RegisterCatarinkaHTMLParser(L: PLua_State):TLuaObjectRegResult;
 begin
-  RegisterTLuaObject(L, objname, @Create, @register_methods);
+  Result := RegisterTLuaObjectAlt(L, objname, @Create, @register_methods);
 end;
 
 constructor TCatarinkaHTMLParser.Create(LuaState: PLua_State;
@@ -137,32 +139,45 @@ begin
   obj := TCatHTMLParser.Create;
 end;
 
+const
+ _pos = 1;
+ _tagpos = 2;
+ _tagline = 3;
+ _tagcontent = 4;
+ _tagname = 5;
+const
+ cProps : array [1..5] of TCatCaseLabel =
+ (
+   (name:'pos';id:_pos),
+   (name:'tagpos';id:_tagpos),
+   (name:'tagline';id:_tagline),
+   (name:'tagcontent';id:_tagcontent),
+   (name:'tagname';id:_tagname)
+ );
+
 function TCatarinkaHTMLParser.GetPropValue(propName: String): Variant;
 begin
-  if CompareText(propName, 'pos') = 0 then
-    result := obj.Pos
-  else if CompareText(propName, 'tagpos') = 0 then
-    result := obj.TagPos
-  else if CompareText(propName, 'tagline') = 0 then
-    result := obj.TagLine
-  else if CompareText(propName, 'tagcontent') = 0 then
-    result := obj.TextBetween
-  else if CompareText(propName, 'tagname') = 0 then
-    result := lowercase(obj.tag.Name)
-  else
+   case CatCaseLabelOf(propname,cprops) of
+    _pos: result := obj.Pos;
+    _tagpos: result := obj.TagPos;
+    _tagline: result := obj.TagLine;
+    _tagcontent: result := obj.TextBetween;
+    _tagname: result := lowercase(obj.tag.Name);
+   else
     result := inherited GetPropValue(propName);
+   end;
 end;
 
 function TCatarinkaHTMLParser.SetPropValue(propName: String;
   const AValue: Variant): Boolean;
 begin
-  result := true; // 2013
-  if CompareText(propName, 'tagcontent') = 0 then
-    obj.TextBetween := AValue
-  else if CompareText(propName, 'tagname') = 0 then
-    obj.tag.Name := AValue
-  else
+   result := true;
+   case CatCaseLabelOf(propname,cprops) of
+    _tagcontent: obj.TextBetween := AValue;
+    _tagname: obj.tag.Name := AValue;
+   else
     result := inherited SetPropValue(propName, AValue);
+   end;
 end;
 
 destructor TCatarinkaHTMLParser.Destroy;

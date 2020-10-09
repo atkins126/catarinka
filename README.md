@@ -1,20 +1,22 @@
 # Catarinka
 
-Catarinka is a set of libraries for Lua and Pascal/Delphi, developed as part of the [Sandcat Browser](https://github.com/felipedaragon/sandcat) project.
+Catarinka is a set of libraries for Lua/LuaJIT and Pascal/Delphi, developed as part of the [Sandcat Browser](https://github.com/felipedaragon/sandcat) project.
 
 ## Directories
 
-* `/lualib` - Catarinka Lua Library source
- * `/docs` - Documentation about the library's functions and classes
-* `/src` - a set of visual and non-visual components, and methods for Pascal/Delphi
+* `/docs_lua` - Documentation about the library's functions and classes for Lua usage
+* `/docs_pascal` - Documentation about the library's functions and classes for Pascal/Delphi usage
+* `/src` - Catarinka Lua Library source. `CtkCore.pas` is the main source code file that performs the Lua library registration during runtime
  
 ## Pascal Components
 
- This kit includes the following components:
+Catarinka includes a set of visual and non-visual components, and methods for Pascal/Delphi. The kit includes the following components:
 
 * `TCatActiveScript` - Improved ActiveScript library based on code by Serhiy Perevoznyk.
 * `TCatChromium` - A web browser component built on top of WACEF3/DCEF3.
 * `TCatConsole` - Console component built on top of a modified version of the Console component by Michael Elsd�rfer.
+* `TCatCSCommand` - Allows to call a console application and capture its output.
+* `TConsoleTimer` - A timer that works from within console applications. Based on component by LU RD.
 * `TCatHighlighters` - Provides quick access to multiple SynEdit highlighters with a color scheme adapted from the CodeRay project.
 * `TClipboardListener` - Monitors changes to the Windows clipboard.
 * `THTMLEntities` - HTML Entity Encoder and Decoder.
@@ -47,6 +49,7 @@ CatPrefs: Rename the `src\CatCryptKey.pas` file, edit it and add your own encryp
 * [DCEF](https://github.com/hgourvest/dcef3) or [WACEF](https://bitbucket.org/WaspAce/wacef), needed by CatChromium. See [dcef-mod](https://github.com/felipedaragon/dcef-mod) for a copy of the latest CEF components, with or without minor modifications
 * [DCPcrypt 2](https://bitbucket.org/wpostma/dcpcrypt2010) - needed by CatDCP.
 * [SynWeb 1.5](https://code.google.com/p/synweb/) and [SynEdit](http://sourceforge.net/projects/synedit/) - needed by CatSynEdit.
+* [Synopse](https://github.com/synopse/SynPDF) - needed by CatCryptoSyno.
 * [Structured Storage](https://github.com/gabr42/GpDelphiUnits) - need by CatStorage.
 * [Abbrevia 5.0](http://sourceforge.net/projects/tpabbrevia/) - needed by CatZIP.
 * [Cromis](http://www.cromis.net/blog/downloads/cromis-ipc/) - needed by CatMsgCromis.

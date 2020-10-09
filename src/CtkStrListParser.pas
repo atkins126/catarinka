@@ -1,4 +1,4 @@
-unit uStrListParser;
+unit CtkStrListParser;
 
 {
   Catarinka Lua Library - String List Parser Object
@@ -10,7 +10,7 @@ unit uStrListParser;
 interface
 
 uses
-  Classes, SysUtils, Lua, LuaObject, CatStringLoop;
+  Classes, SysUtils, Lua, pLua, LuaObject, CatStrings, CatStringLoop;
 
 type
   { TCatarinkaStrListParser }
@@ -26,11 +26,9 @@ type
     destructor Destroy; override;
   end;
 
-procedure RegisterCatarinkaStrListParser(L: PLua_State);
+function RegisterCatarinkaStrListParser(L: PLua_State):TLuaObjectRegResult;
 
 implementation
-
-uses pLua;
 
 function method_parsing(L: PLua_State): Integer; cdecl;
 var
@@ -91,8 +89,8 @@ var
   ht: TCatarinkaStrListParser;
 begin
   ht := TCatarinkaStrListParser(LuaToTLuaObject(L, 1));
-  ht.obj.List.add(lua_tostring(L, 2));
-  result := 1;
+  if plua_validatemethodargs(L, result, [LUA_TSTRING]).OK then
+    ht.obj.List.add(lua_tostring(L, 2));
 end;
 
 function method_loadfromstr(L: PLua_State): Integer; cdecl;
@@ -100,8 +98,8 @@ var
   ht: TCatarinkaStrListParser;
 begin
   ht := TCatarinkaStrListParser(LuaToTLuaObject(L, 1));
-  ht.obj.loadfromstring(lua_tostring(L, 2));
-  result := 1;
+  if plua_validatemethodargs(L, result, [LUA_TSTRING]).OK then
+   ht.obj.loadfromstring(lua_tostring(L, 2));
 end;
 
 function method_loadfromfile(L: PLua_State): Integer; cdecl;
@@ -109,8 +107,8 @@ var
   ht: TCatarinkaStrListParser;
 begin
   ht := TCatarinkaStrListParser(LuaToTLuaObject(L, 1));
-  ht.obj.loadfromfile(lua_tostring(L, 2));
-  result := 1;
+  if plua_validatemethodargs(L, result, [LUA_TSTRING]).OK then
+    ht.obj.loadfromfile(lua_tostring(L, 2));
 end;
 
 function method_savetofile(L: PLua_State): Integer; cdecl;
@@ -118,8 +116,8 @@ var
   ht: TCatarinkaStrListParser;
 begin
   ht := TCatarinkaStrListParser(LuaToTLuaObject(L, 1));
-  ht.obj.List.savetofile(lua_tostring(L, 2));
-  result := 1;
+  if plua_validatemethodargs(L, result, [LUA_TSTRING]).OK then
+    ht.obj.List.savetofile(lua_tostring(L, 2));
 end;
 
 function method_getvalue(L: PLua_State): Integer; cdecl;
@@ -127,11 +125,12 @@ var
   ht: TCatarinkaStrListParser; sl: TStringList;
 begin
   ht := TCatarinkaStrListParser(LuaToTLuaObject(L, 1));
-  sl := TStringList.Create;
-  sl.CommaText := ht.obj.Current;
-  lua_pushstring(L, sl.values[lua_tostring(L, 2)]);
-  sl.Free;
-  result := 1;
+  if plua_validatemethodargs(L, result, [LUA_TSTRING]).OK then begin
+   sl := TStringList.Create;
+   sl.CommaText := ht.obj.Current;
+   lua_pushstring(L, sl.values[lua_tostring(L, 2)]);
+   sl.Free;
+  end;
 end;
 
 function method_indexof(L: PLua_State): Integer; cdecl;
@@ -139,8 +138,8 @@ var
   ht: TCatarinkaStrListParser;
 begin
   ht := TCatarinkaStrListParser(LuaToTLuaObject(L, 1));
-  lua_pushinteger(L, ht.obj.indexof(lua_tostring(L, 2)));
-  result := 1;
+  if plua_validatemethodargs(L, result, [LUA_TSTRING]).OK then
+    plua_pushintnumber(L, ht.obj.indexof(lua_tostring(L, 2)));
 end;
 
 function method_getstringfromindex(L: PLua_State): Integer; cdecl;
@@ -148,8 +147,8 @@ var
   ht: TCatarinkaStrListParser;
 begin
   ht := TCatarinkaStrListParser(LuaToTLuaObject(L, 1));
-  lua_pushstring(L, ht.obj.list.strings[lua_tointeger(L, 2)]);
-  result := 1;
+  if plua_validatemethodargs(L, result, [LUA_TNUMBER]).OK then
+    lua_pushstring(L, ht.obj.list.strings[lua_tointeger(L, 2)]);
 end;
 
 procedure register_methods(L: PLua_State; classTable: Integer);
@@ -185,9 +184,9 @@ begin
   result := new_LuaObject(L, objname, p);
 end;
 
-procedure RegisterCatarinkaStrListParser(L: PLua_State);
+function RegisterCatarinkaStrListParser(L: PLua_State):TLuaObjectRegResult;
 begin
-  RegisterTLuaObject(L, objname, @Create, @register_methods);
+  Result := RegisterTLuaObjectAlt(L, objname, @Create, @register_methods);
 end;
 
 constructor TCatarinkaStrListParser.Create(LuaState: PLua_State;
@@ -197,37 +196,49 @@ begin
   obj := TStringLoop.Create;
 end;
 
+const
+ _commatext = 1;
+ _count = 2;
+ _current = 3;
+ _curindex = 4;
+ _text = 5;
+const
+ cProps : array [1..5] of TCatCaseLabel =
+ (
+   (name:'commatext';id:_commatext),
+   (name:'count';id:_count),
+   (name:'current';id:_current),
+   (name:'curindex';id:_curindex),
+   (name:'text';id:_text)
+ );
+
 function TCatarinkaStrListParser.GetPropValue(propName: String): Variant;
 begin
-  if CompareText(propName, 'commatext') = 0 then
-    result := obj.List.CommaText
-  else if CompareText(propName, 'count') = 0 then
-    result := obj.Count
-  else if CompareText(propName, 'current') = 0 then
-    result := obj.Current
-  else if CompareText(propName, 'curindex') = 0 then
-    result := obj.Index(false)
-  else if CompareText(propName, 'text') = 0 then
-    result := obj.List.Text
-  else
+   case CatCaseLabelOf(propname,cprops) of
+    _commatext: result := obj.List.CommaText;
+    _count: result := obj.Count;
+    _current: result := obj.Current;
+    _curindex: result := obj.Index(false);
+    _text: result := obj.List.Text;
+   else
     result := inherited GetPropValue(propName);
+   end;
 end;
 
 function TCatarinkaStrListParser.SetPropValue(propName: String;
   const AValue: Variant): Boolean;
 begin
   result := true;
-  if CompareText(propName, 'commatext') = 0 then
-  begin
-    obj.List.CommaText := AValue;
-    obj.reset;
-  end
-  else if CompareText(propName, 'current') = 0 then
-    obj.Current := AValue
-  else if CompareText(propName, 'text') = 0 then
-    obj.loadfromstring(AValue)
-  else
+   case CatCaseLabelOf(propname,cprops) of
+    _commatext: begin
+        obj.List.CommaText := AValue;
+        obj.reset;
+      end;
+    _current: obj.Current := AValue;
+    _text: obj.loadfromstring(AValue);
+   else
     result := inherited SetPropValue(propName, AValue);
+   end;
 end;
 
 destructor TCatarinkaStrListParser.Destroy;
