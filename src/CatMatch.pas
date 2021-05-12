@@ -2,12 +2,15 @@ unit CatMatch;
 {
   Catarinka - Regular Expression and various other useful matching functions
 
-  Copyright (c) 2003-2020 Felipe Daragon
+  Copyright (c) 2003-2021 Felipe Daragon
   License: 3-clause BSD
   See https://github.com/felipedaragon/catarinka/ for details
 
   Uses the RegExpr library by Andrey V. Sorokin.
   MatchWildcard function by Arsne von Wyss
+  CompareVersionNumber() function by Martin Prikryl (@martinprikryl) with small
+  changes and suggestions by Tithen-Firion
+  CompareVersionString() function is my extension to Martin's function
 }
 
 interface
@@ -24,6 +27,23 @@ uses
 type
   TCatRegExpr = TRegExpr;
 
+const
+ VERSTG_RELEASE = 5;
+ VERSTG_RELEASECANDIDATE = 4;
+ VERSTG_BETA = 3;
+ VERSTG_ALPHA = 2;
+ VERSTG_PREALPHA = 1;
+
+type
+ TVersionParts = record
+   originalstring: string;
+   version: string;
+   ext:string;
+   extnum: string;
+   hasletter: boolean;
+   stage:integer;
+ end;
+
 function RegExpFind(const s, re: string): string;
 function RegExpReplace(const s, re, sreplacement: string): string; overload;
 function RegExpReplace(const s, re: string; refunc: TRegExprReplaceFunction): string; overload;
@@ -32,6 +52,12 @@ function CatCaseWildOf(const s: string; labels: array of string;
 function CatCaseWildXOf(const s: string; labels: array of string;
   const casesensitive: Boolean = true): integer;  
 function CatMatchSignature(const sigpattern, s: string): boolean;
+function CompareVersionNumber(const version1, version2: string;
+  const Silent:boolean=true): Integer;
+function CompareVersionString(const version1, version2: string;
+  const Silent:boolean=true): Integer;
+function CrackVersionString(const ver: string): TVersionParts;
+function IsWildCardString(const s:string):boolean;
 function IsValidEmail(email: string): boolean;
 function ExtractVersionFromString(s:string):string;
 function MatchStrInSepStr(const s,tags:string;separator:string=','):boolean;
@@ -141,6 +167,7 @@ end;
 // Allows to match a string using different methods:
 // [somestring] -- case sensitive contains
 // wild:[somestring] -- case sensitive wild match
+// wildx:[somestring] -- case sensitive wild match extended
 // regexp:[expression] -- regular expression
 // icase:[somestring] -- case insensitive contains
 // icase:wild:[somestring] -- case insensitive wild match (* and ?)
@@ -149,6 +176,7 @@ const
   cIgnoreCase = 'icase:';
   cReEx = 'regexp:';
   cWild = 'wild:';
+  cWildX = 'wildx';
 var
   sig, content, pat: string;
 begin
@@ -170,6 +198,12 @@ begin
   begin
     pat := after(sig, cWild);
     result := MatchWildcard(content, pat);
+  end
+  else
+  if BeginsWith(sig,cWildx) then
+  begin
+    pat := after(sig, cWildx);
+    result := MatchWildcardX(content, pat);
   end
   else
   begin
@@ -224,6 +258,148 @@ begin
   result := before(result, ',');
 end;
 
+function NextIntFromVersion(var S: string;const Silent:boolean=true): Integer;
+var
+  P: integer;
+begin
+    P := Pos('.', S);
+    if P > 0 then
+    begin
+      if silent = true then
+        result := StrToIntDef(Copy(S, 1, P - 1), 0)
+      else
+        result := StrToInt(Copy(S, 1, P - 1));
+      Delete(S, 1, P);
+    end
+      else
+    if S <> emptystr then
+    begin
+      if silent = true then
+      result := StrToIntDef(S, 0) else
+      result := StrToInt(S);
+      S := emptystr;
+    end
+      else
+    begin
+      result := 0;
+    end;
+end;
+
+{
+Compares version numbers
+ Returns 0, if the versions are equal.
+ Returns -1, if the V1 is older than the V2.
+ Returns 1, if the V1 is newer than the V2.
+ 1.12 is considered newer than 1.1.
+ 1.1 is considered the same as 1.1.0.
+ If silent is false, throws an exception, when a version is syntactically invalid (only digits and dots are allowed).
+}
+// Thanks Martin Prikryl (@martinprikryl) and Tithen-Firion
+function CompareVersionNumber(const version1, version2: string;
+  const Silent:boolean=true): Integer;
+var
+  v1, v2:string;
+  N1, N2: Integer;
+begin
+  Result := 0;
+  v1 := version1;
+  v2 := version2;
+  while (Result = 0) and ((V1 <> EmptyStr) or (V2 <> EmptyStr)) do
+  begin
+    N1 := NextIntFromVersion(V1);
+    N2 := NextIntFromVersion(V2);
+    if N1 < N2 then Result := -1
+      else
+    if N1 > N2 then Result := 1;
+  end;
+end;
+
+function GetVersionStage(const ver:string):integer;
+var lv:string;
+begin
+  lv := lowercase(ver);
+  result := VERSTG_RELEASE;
+  if pos('rc', lv) <> 0 then
+    result := VERSTG_RELEASECANDIDATE;
+  if pos('pre', lv) <> 0 then // pre-release
+    result := VERSTG_RELEASECANDIDATE;
+  if pos('beta', lv) <> 0 then
+    result := VERSTG_BETA;
+  if pos('preview', lv) <> 0 then
+    result := VERSTG_BETA;
+  if pos('alpha', lv) <> 0 then
+    result := VERSTG_ALPHA;
+  // pre-alpha
+  if (pos('pre', lv) <> 0) and (pos('alpha', lv) <> 0) then
+    result := VERSTG_PREALPHA;
+end;
+
+function CrackVersionString(const ver: string): TVersionParts;
+begin
+  result.ext := emptystr;
+  result.extnum := emptystr;
+  result.originalstring := ver;
+  result.version := ver;
+  result.hasletter := false;
+  result.stage := VERSTG_RELEASE;
+  if IsAlphaNumeric(ver) then begin
+    result.version := ExtractVersionFromString(ver);
+    result.ext := After(ver, result.version);
+    // handles version like 1.0.0b-somename
+    if pos('-', result.ext) <> 0 then
+    result.ext := Before(result.ext, '-');
+    result.extnum := ExtractNumbers(result.ext);
+    result.hasletter := (length(result.ext) = 1) and (result.ext[1] in ['a'..'z','A'..'Z']);
+    result.stage := GetVersionStage(ver);
+  end;
+end;
+
+
+// This function I wrote extends the CompareVersion function by martinprikryl (above)
+// to compare versions that contain alphanumeric extensions like:
+// v1.0 versus V1.1
+// 1.0 RC1 versus 1.0 RC2
+// 1.0a versus 1.0B or 1.0b
+// 1.5.0-rc1 versus 1.5.0-beta1 and similar
+function CompareVersionString(const version1, version2: string;
+  const Silent:boolean=true): Integer;
+var
+ v1,v2: TVersionParts;
+ function CompareVersionAlphaExtension(curver, vercheck:string):integer;
+ begin
+   result := 0;
+    if curver < vercheck  then
+        result := -1
+    else if curver > vercheck  then
+        result := 1;
+ end;
+begin
+  v1 := CrackVersionString(version1);
+  v2 := CrackVersionString(version2);
+  result := CompareVersionNumber(v1.version, v2.version, silent);
+
+  // If versions are identical and extended version information is available
+  // conclude by comparing numbers from extension part
+  if result = 0 then begin
+    // Compares case like 1.5.0-beta.10 versus 1.5.0-beta.11
+    if (v1.ext <> emptystr) and (v2.ext <> emptystr) then
+    result := CompareVersionNumber(v1.extnum, v2.extnum, silent);
+
+    // Assign letter if required and compare cases like
+    //1.0 versus 1.0a
+    //1.0.1a versus 1.0.1b
+    if (v1.hasletter = true) and (v2.ext = emptystr) then
+       result := 1;
+    if (v2.hasletter = true) and (v1.ext = emptystr) then
+       result := -1;
+    if (length(v1.ext) =1) and (length(v2.ext) = 1) then
+      result := CompareVersionAlphaExtension(lowercase(v1.ext), lowercase(v2.ext));
+    // if the development stage is different, the result must be the stage comparison
+    if (v1.stage <> v2.stage) then
+      result := CompareVersionNumber(IntToStr(v1.stage), IntToStr(v2.stage));
+  end;
+end;
+
 // Matches a string against a separated string (comma-based if separator is ommited)
 function MatchStrInSepStr(const s,tags:string;separator:string=','):boolean;
 var Tag: TSepStringLoop;
@@ -241,41 +417,68 @@ begin
   end;
 end;
 
-// expects expression like: <3.4.0 or <=3.4.0
+function IsWildCardString(const s:string):boolean;
+begin
+  result := ContainsAnyOfChars(s, ['*','?']);
+end;
+
+// expects expression like:
+//  <3.4.0
+//  <=3.4.0
 // when using just the equal sign, can be followed by a wildcard, ex:
-// =* (matches any version), =3.*, =3.1.??
+//  =* (matches any version)
+//  =3.*
+//  =3.1.??
 function MatchVersion(curver, vercheck:string):boolean;
 var
-  outver:string;
+  outver: string;
+  compres: integer;
 begin
   result := false;
-  outver := ExtractVersionFromString(vercheck);
+  compres := -1; // avoid compiler message
+  outver := vercheck; //ExtractVersionFromString(vercheck);
+    //if beginswith(vercheck, '=') = false then
+    //  compres := CompareVersionNumber(curver, outver);
     if beginswith(vercheck, '>=') then begin
-        if curver >= outver  then
+        outver := after(vercheck, '>=');
+        compres := CompareVersionString(curver, outver);
+        if (compres = 1) or (compres = 0) then
         result := true;
     end else
     if beginswith(vercheck, '<=') then begin
-        if curver <= outver  then
+        outver := after(vercheck, '<=');
+        compres := CompareVersionString(curver, outver);
+        if (compres = -1) or (compres = 0) then
         result := true;
     end else
     if beginswith(vercheck, '<') then begin
-        if curver < outver  then
+        outver := after(vercheck, '<');
+        compres := CompareVersionString(curver, outver);
+        if (compres = -1) then
         result := true;
     end else
     if beginswith(vercheck, '>') then begin
-        if curver > outver  then
+        outver := after(vercheck, '>');
+        compres := CompareVersionString(curver, outver);
+        if (compres = 1) then
         result := true;
     end else
     if beginswith(vercheck, '=') then begin
         outver := after(vercheck, '=');
-        if matchwildcard(curver, outver) = true  then
-        result := true;
+        if IsWildCardString(outver) = false then begin
+          compres := CompareVersionString(curver, outver);
+          if (compres = 0) then
+          result := true;
+        end else begin
+          if matchwildcard(curver, outver) = true  then
+          result := true;
+        end;
     end;
 end;
 
-// expects a version check range separated by spaces like:
+// expects multiple version checks separated by spaces like:
 // >=1.4.2 <1.6.2
-// must match all to return true
+// will return true if all are matched, false otherwise
 function MatchVersionRange(curver, vercheck:string):boolean;
 var
   s: TSepStringLoop;

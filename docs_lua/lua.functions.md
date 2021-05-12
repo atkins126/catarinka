@@ -31,6 +31,7 @@
 * **after** ( s, sub ): Returns the portion of the string after a specific sub-string.
 * **before** ( s, sub ): Returns the portion of the string before a specific sub-string.
 * **between** ( s, start, stop ): Returns a string between 2 strings.
+* **comparever** ( version1, version2 ): Compare two version strings. If versions are equal, returns 0. If version1 is newer than version2, returns 1 and if version1 is older than version2, returns -1.
 * **decrease** ( s [,step] ): Decreases the string characters.
 * **gettoken** ( s, delim, int ): Returns what comes after a delimiter.
 * **increase** ( s [,step] ): Increases the string characters.
@@ -54,6 +55,8 @@
 * **isint** ( s ): Checks if a string is integer.
 * **match** ( s, pattern ): Wildcard matching (* and ?).
 * **matchx** ( s, pattern ): Extended Wildcard matching, Catarinka's way (*, ?, # for number and ¿ to match a letter).
+* **matchver** ( version1, version2 ): Version string matching. Returns true if versions compared are equal.
+* **matchverpat** ( version, pattern ): Version string matching using a pattern (see test.lua for examples).
 
 These will return a boolean value.
 
@@ -137,7 +140,12 @@ These will return a boolean value.
 ### Crypto Functions (crypto.*)
 
 * **md5** ( s ): Returns the MD5 hash of a given string.
+* **randompwd** ([len]): Generates and returns a random password. 8 is the minimal accepted length. 16 is the default length.
+* **randompwdadmin** ([len]): Generates and returns a random administrator password. 16 is the minimal accepted length. 26 is the default length.
 * **sha1** ( s ): Returns the SHA-1 hash of a given string.
+* **sha256** ( s ): Returns the SHA-256 hash of a given string.
+* **sha384** ( s ): Returns the SHA-384 hash of a given string.
+* **sha512** ( s ): Returns the SHA-512 hash of a given string.
 
 ### Task Functions (task.*)
 

@@ -61,12 +61,13 @@ end;
 
 function get_string(L: plua_State): integer; cdecl;
 const
-   string_table : array [1..24] of luaL_Reg =
+   string_table : array [1..27] of luaL_Reg =
    (
    (name:'after';func:str_after),
    (name:'before';func:str_before),
    (name:'beginswith';func:str_beginswith),
    (name:'between';func:str_between),
+   (name:'comparever';func:str_compareversion),
    (name:'decrease';func:str_decrease),
    (name:'endswith';func:str_endswith),
    (name:'gettoken';func:str_gettoken),
@@ -76,6 +77,8 @@ const
    (name:'lastchar';func:str_lastchar),
    (name:'match';func:str_wildmatch),
    (name:'matchx';func:str_wildmatchx),
+   (name:'matchver';func:str_matchversion),
+   (name:'matchverpat';func:str_matchversionex),
    (name:'maxlen';func:str_maxlen),
    (name:'occur';func:str_occur),
    (name:'random';func:str_random),
@@ -166,10 +169,15 @@ end;
 
 function get_cryptofields(L: plua_State): integer; cdecl;
 const
-   crypto_table : array [1..3] of luaL_Reg =
+   crypto_table : array [1..8] of luaL_Reg =
    (
    (name:'md5';func:conv_strtomd5),
+   (name:'randompwd';func:str_randompassword),
+   (name:'randompwdadmin';func:str_randompasswordadmin),
    (name:'sha1';func:conv_strtosha1),
+   (name:'sha256';func:conv_strtosha256),
+   (name:'sha384';func:conv_strtosha384),
+   (name:'sha512';func:conv_strtosha512),
    (name:nil;func:nil)
    );
 begin
